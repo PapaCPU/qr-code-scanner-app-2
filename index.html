@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Scanner</title>
+    <script src="js/html5-qrcode.min.js"></script>
+    <script src="https://alcdn.msauth.net/browser/2.12.0/js/msal-browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/microsoft-graph-client/lib/graph-js-sdk-web.js"></script>
+</head>
+<body>
+    <h1>QR Code Scanner</h1>
+    <div id="reader" style="width: 300px;"></div>
+    <div id="input-section" style="display: none;">
+        <label for="quantity">Enter Quantity:</label>
+        <input type="number" id="quantity" name="quantity">
+        <button onclick="submitData()">Submit</button>
+    </div>
+    <script>
+        const msalConfig = {
+            auth: {
+                clientId: '46379ca2-3a70-475c-b063-095bf3a112cf', // Ihre Client-ID
+                redirectUri: 'http://localhost:3000', // Ihre Umleitungs-URI
+            }
+        };
+
+        const msalClient = new msal.PublicClientApplication(msalConfig);
+
+        const graphClient = MicrosoftGraph.Client.init({
+            authProvider: (done) => {
+                msalClient.acquireTokenSilent({
+                    scopes: ["Files.ReadWrite"]
+                }).then(response => {
+                    done(null, response.accessToken);
+                }).catch(err => {
+                    msalClient.acquireTokenPopup({
+                        scopes: ["Files.ReadWrite"]
+                    }).then(response => {
+                        done(null, response.accessToken);
+                    }).catch(err => {
+                        done(err, null);
+                    });
+                });
+            }
+        });
+
+        let scannedCode = '';
+
+        function onScanSuccess(decodedText, decodedResult) {
+            console.log(`Code scanned = ${decodedText}`, decodedResult);
+            alert(`Scanned: ${decodedText}`);
+            scannedCode = decodedText;
+            document.getElementById("input-section").style.display = "block";
+        }
+
+        function onScanFailure(error) {
+            console.warn(`QR error = ${error}`);
+        }
+
+        function initScanner() {
+            const config = { fps: 10, qrbox: 250 };
+            const html5Qrcode = new Html5Qrcode("reader");
+
+            Html5Qrcode.getCameras().then(devices => {
+                console.log("Devices found: ", devices);
+                if (devices && devices.length) {
+                    let cameraId = devices[0].id;  // Fallback in case no back camera is found
+                    for (const device of devices) {
+                        if (device.label.toLowerCase().includes('back')) {
+                            cameraId = device.id;
+                            break;
+                        }
+                    }
+                    console.log("Starting scanner with camera ID: ", cameraId);
+                    html5Qrcode.start(cameraId, config, onScanSuccess, onScanFailure)
+                    .catch(err => {
+                        console.error("Error starting scanner: ", err);
+                    });
+                } else {
+                    console.error('No cameras found.');
+                    alert('No cameras found.');
+                }
+            }).catch(err => {
+                console.error('Error getting cameras: ', err);
+                alert('Error getting cameras: ' + err);
+            });
+        }
+
+        function submitData() {
+            const quantity = document.getElementById('quantity').value;
+            if (scannedCode && quantity) {
+                const fileName = 'Inventur.xlsx'; // Ihr Dateiname
+                const filePath = `/drive/root:/OneDrive%20-%20Huzap%20GmbH/${fileName}`; // Ihr Pfad
+                
+                graphClient.api(filePath).get().then(response => {
+                    // Aktualisieren Sie die Excel-Datei mit den neuen Daten
+                    // Dies ist nur ein Beispiel. Sie müssen den Dateiinhalt analysieren und aktualisieren
+                    console.log(response);
+
+                    alert('Data submitted successfully');
+                }).catch(error => {
+                    console.error('Error:', error);
+                    alert('Error submitting data');
+                });
+            } else {
+                alert('Please scan a code and enter a quantity.');
+            }
+        }
+
+        window.onload = () => {
+            initScanner();
+        };
+    </script>
+</body>
+</html>
