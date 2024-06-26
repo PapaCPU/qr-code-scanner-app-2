@@ -10,21 +10,36 @@
     <h1>QR Code Scanner</h1>
     <div id="reader" style="width: 300px;"></div>
     <script>
+        let scanStartTime;
+        const SCAN_TIMEOUT = 10000;  // 10 seconds
+
         function onScanSuccess(decodedText, decodedResult) {
             console.log(`Code scanned = ${decodedText}`, decodedResult);
             alert(`Scanned: ${decodedText}`);
+            fetch('/update_excel', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ info: decodedText })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+            });
         }
 
         function onScanFailure(error) {
-            console.warn(`QR error = ${error}`);
-            // No alert here to avoid immediate errors disrupting the flow
+            const currentTime = new Date().getTime();
+            if (currentTime - scanStartTime > SCAN_TIMEOUT) {
+                console.warn(`QR error = ${error}`);
+                alert(`QR error: No QR code found within the time limit.`);
+            }
         }
 
         function initScanner() {
             const config = { fps: 10, qrbox: 250 };
-            const verbose = false;
-            const html5QrcodeScanner = new Html5QrcodeScanner(
-                "reader", config, verbose);
+            const html5QrcodeScanner = new Html5QrcodeScanner("reader", config, false);
 
             Html5Qrcode.getCameras().then(devices => {
                 console.log("Devices found: ", devices);
@@ -36,20 +51,20 @@
                             break;
                         }
                     }
+                    scanStartTime = new Date().getTime();
                     console.log("Starting scanner with camera ID: ", cameraId);
-                    html5QrcodeScanner.start(
-                        cameraId, 
-                        config, 
-                        onScanSuccess, 
-                        onScanFailure)
+                    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+                    html5QrcodeScanner.start(cameraId, config, onScanSuccess, onScanFailure)
                     .catch(err => {
                         console.error("Error starting scanner: ", err);
                     });
                 } else {
                     console.error('No cameras found.');
+                    alert('No cameras found.');
                 }
             }).catch(err => {
                 console.error('Error getting cameras: ', err);
+                alert('Error getting cameras: ' + err);
             });
         }
 
