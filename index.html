@@ -39,7 +39,7 @@
 
         function initScanner() {
             const config = { fps: 10, qrbox: 250 };
-            const html5QrcodeScanner = new Html5QrcodeScanner("reader", config, false);
+            const html5Qrcode = new Html5Qrcode("reader");
 
             Html5Qrcode.getCameras().then(devices => {
                 console.log("Devices found: ", devices);
@@ -53,8 +53,7 @@
                     }
                     scanStartTime = new Date().getTime();
                     console.log("Starting scanner with camera ID: ", cameraId);
-                    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-                    html5QrcodeScanner.start(cameraId, config, onScanSuccess, onScanFailure)
+                    html5Qrcode.start(cameraId, config, onScanSuccess, onScanFailure)
                     .catch(err => {
                         console.error("Error starting scanner: ", err);
                     });
