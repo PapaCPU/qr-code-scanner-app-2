@@ -10,6 +10,9 @@
     <h1>QR Code Scanner</h1>
     <div id="reader" style="width: 300px;"></div>
     <script>
+        let scanStartTime;
+        const SCAN_TIMEOUT = 10000;  // 10 seconds
+
         function onScanSuccess(decodedText, decodedResult) {
             console.log(`Code scanned = ${decodedText}`, decodedResult);
             alert(`Scanned: ${decodedText}`);
@@ -28,13 +31,45 @@
 
         function onScanFailure(error) {
             console.warn(`QR error = ${error}`);
-            alert(`QR error: ${error}`);
+            const currentTime = new Date().getTime();
+            if (currentTime - scanStartTime > SCAN_TIMEOUT) {
+                alert(`QR error: ${error}`);
+            }
         }
 
         console.log("Initializing QR Code Scanner");
-        let html5QrcodeScanner = new Html5QrcodeScanner(
-            "reader", { fps: 10, qrbox: 250 });
-        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+
+        function initScanner() {
+            const config = { fps: 10, qrbox: 250 };
+            const verbose = false;
+            const html5QrcodeScanner = new Html5QrcodeScanner(
+                "reader", config, verbose);
+
+            Html5Qrcode.getCameras().then(devices => {
+                if (devices && devices.length) {
+                    var cameraId = devices[0].id;  // Fallback in case no back camera is found
+                    for (const device of devices) {
+                        if (device.label.toLowerCase().includes('back')) {
+                            cameraId = device.id;
+                            break;
+                        }
+                    }
+                    scanStartTime = new Date().getTime();
+                    html5QrcodeScanner.start(
+                        cameraId, 
+                        config, 
+                        onScanSuccess, 
+                        onScanFailure);
+                } else {
+                    console.error('No cameras found.');
+                }
+            }).catch(err => {
+                console.error('Error getting cameras: ', err);
+            });
+        }
+
+        initScanner();
+
         console.log("QR Code Scanner initialized");
     </script>
 </body>
