@@ -91,16 +91,16 @@
             if (scannedCode && quantity) {
                 const fileName = 'Inventur.xlsx'; // Ihr Dateiname
                 const filePath = `/drive/root:/OneDrive%20-%20Huzap%20GmbH/${fileName}`; // Ihr Pfad
-                
-                graphClient.api(filePath).get().then(response => {
-                    // Aktualisieren Sie die Excel-Datei mit den neuen Daten
-                    // Dies ist nur ein Beispiel. Sie müssen den Dateiinhalt analysieren und aktualisieren
-                    console.log(response);
 
+                console.log("Submitting data to:", filePath);
+
+                graphClient.api(filePath).get().then(response => {
+                    console.log("Response received:", response);
+                    // Hier können Sie den Dateiinhalt aktualisieren
                     alert('Data submitted successfully');
                 }).catch(error => {
                     console.error('Error:', error);
-                    alert('Error submitting data');
+                    alert('Error submitting data: ' + JSON.stringify(error));
                 });
             } else {
                 alert('Please scan a code and enter a quantity.');
