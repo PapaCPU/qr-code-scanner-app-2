@@ -30,14 +30,12 @@
         }
 
         function onScanFailure(error) {
-            console.warn(`QR error = ${error}`);
             const currentTime = new Date().getTime();
             if (currentTime - scanStartTime > SCAN_TIMEOUT) {
-                alert(`QR error: ${error}`);
+                console.warn(`QR error = ${error}`);
+                alert(`QR error: No QR code found within the time limit.`);
             }
         }
-
-        console.log("Initializing QR Code Scanner");
 
         function initScanner() {
             const config = { fps: 10, qrbox: 250 };
@@ -47,7 +45,7 @@
 
             Html5Qrcode.getCameras().then(devices => {
                 if (devices && devices.length) {
-                    var cameraId = devices[0].id;  // Fallback in case no back camera is found
+                    let cameraId = devices[0].id;  // Fallback in case no back camera is found
                     for (const device of devices) {
                         if (device.label.toLowerCase().includes('back')) {
                             cameraId = device.id;
@@ -62,15 +60,17 @@
                         onScanFailure);
                 } else {
                     console.error('No cameras found.');
+                    alert('No cameras found.');
                 }
             }).catch(err => {
                 console.error('Error getting cameras: ', err);
+                alert('Error getting cameras: ' + err);
             });
         }
 
-        initScanner();
-
-        console.log("QR Code Scanner initialized");
+        window.onload = () => {
+            initScanner();
+        };
     </script>
 </body>
 </html>
