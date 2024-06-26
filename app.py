@@ -7,7 +7,7 @@ app = Flask(__name__)
 def update_excel():
     data = request.json
     article_number = data['info']
-    quantity = request.args.get('quantity', 1)  # Default quantity is 1
+    quantity = int(data['quantity'])
 
     file_path = 'path_to_your_OneDrive_excel_file.xlsx'
     
@@ -18,7 +18,9 @@ def update_excel():
     if article_number in df['Info'].values:
         df.loc[df['Info'] == article_number, 'Stückzahl'] += quantity
     else:
-        return jsonify({"message": "Artikelnummer nicht gefunden."}), 404
+        # Falls die Artikelnummer nicht existiert, neue Zeile hinzufügen
+        new_row = {'Info': article_number, 'Stückzahl': quantity}
+        df = df.append(new_row, ignore_index=True)
     
     # Änderungen speichern
     df.to_excel(file_path, index=False)
