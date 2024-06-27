@@ -54,8 +54,14 @@
         function onScanSuccess(decodedText, decodedResult) {
             console.log(`Code scanned = ${decodedText}`, decodedResult);
             alert(`Scanned: ${decodedText}`);
-            scannedCode = decodedText;
+            scannedCode = extractInfo(decodedText);
             document.getElementById("input-section").style.display = "block";
+        }
+
+        function extractInfo(decodedText) {
+            // Extrahiere den Teil des Textes, der die "Info" enthält
+            const infoMatch = decodedText.match(/Info: (.*?)\n/);
+            return infoMatch ? infoMatch[1] : decodedText;
         }
 
         function onScanFailure(error) {
@@ -131,13 +137,24 @@
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "scanned_data.csv");
+            link.setAttribute("download", `scanned_data_${new Date().toISOString().slice(0, 10)}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         }
 
+        function checkExistingData() {
+            const existingData = localStorage.getItem('scannedData');
+            if (existingData) {
+                const continueEditing = confirm("Do you want to continue editing the existing list?");
+                if (!continueEditing) {
+                    localStorage.removeItem('scannedData');
+                }
+            }
+        }
+
         window.onload = () => {
+            checkExistingData();
             initScanner();
             displayData();
         };
