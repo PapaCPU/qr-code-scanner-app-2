@@ -10,7 +10,8 @@
             font-family: Arial, sans-serif;
         }
         #reader {
-            width: 300px;
+            width: 100%;
+            max-width: 600px;
             margin: auto;
         }
         #input-section {
@@ -18,6 +19,19 @@
         }
         #data-display {
             margin-top: 20px;
+            max-width: 600px;
+            margin: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
         }
         #export-button {
             margin-top: 20px;
@@ -89,7 +103,16 @@
         function displayData() {
             const data = JSON.parse(localStorage.getItem('scannedData') || '[]');
             const display = document.getElementById('data-display');
-            display.innerHTML = '<h2>Stored Data</h2><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            if (data.length === 0) {
+                display.innerHTML = '<p>No data stored.</p>';
+                return;
+            }
+            let tableHtml = '<table><tr><th>Code</th><th>Quantity</th></tr>';
+            data.forEach(row => {
+                tableHtml += `<tr><td>${row.code}</td><td>${row.quantity}</td></tr>`;
+            });
+            tableHtml += '</table>';
+            display.innerHTML = tableHtml;
             if (data.length > 0) {
                 document.getElementById('export-button').style.display = 'block';
             }
