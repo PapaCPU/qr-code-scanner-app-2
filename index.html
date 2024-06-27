@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,14 +8,29 @@
     <style>
         body {
             font-family: Arial, sans-serif;
+            background-color: #d3d3d3; /* Hellgrauer Hintergrund */
         }
         #reader {
             width: 100%;
             max-width: 600px;
             margin: auto;
         }
-        #input-section {
+        #input-section, #menu, #list-section {
             margin-top: 20px;
+            text-align: center;
+        }
+        .button {
+            background-color: #f0f8ff; /* Helles Blau */
+            border: none;
+            color: black;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 12px; /* Abgerundete Ecken */
         }
         #data-display {
             margin-top: 20px;
@@ -39,33 +54,88 @@
     </style>
 </head>
 <body>
-    <h1>QR Code Scanner</h1>
-    <div id="reader"></div>
-    <div id="input-section" style="display: none;">
-        <label for="quantity">Enter Quantity:</label>
-        <input type="number" id="quantity" name="quantity">
-        <button onclick="submitData()">Submit</button>
+    <div id="menu">
+        <button class="button" onclick="startNewList()">Neue Liste</button>
+        <button class="button" onclick="showList()">Bearbeiten</button>
     </div>
+    <div id="reader" style="display: none;"></div>
+    <div id="input-section" style="display: none;">
+        <label for="quantity">Stückzahl eingeben:</label>
+        <input type="number" id="quantity" name="quantity">
+        <button class="button" onclick="submitData()">Bestätigen</button>
+    </div>
+    <div id="list-section" style="display: none;"></div>
     <div id="data-display"></div>
-    <button id="export-button" onclick="exportData()" style="display: none;">Export Data</button>
+    <button id="export-button" class="button" onclick="exportData()" style="display: none;">Daten exportieren</button>
     <script>
         let scannedCode = '';
 
+        function startNewList() {
+            const continueWithExisting = confirm("Möchten Sie die bestehende Liste weiter bearbeiten?");
+            if (!continueWithExisting) {
+                localStorage.removeItem('scannedData');
+                alert("Neue Liste erstellt.");
+            }
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('reader').style.display = 'block';
+            initScanner();
+        }
+
+        function showList() {
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('list-section').style.display = 'block';
+            displayList();
+        }
+
+        function displayList() {
+            const listSection = document.getElementById('list-section');
+            const existingData = JSON.parse(localStorage.getItem('scannedDataList') || '[]');
+            if (existingData.length === 0) {
+                listSection.innerHTML = '<p>Keine gespeicherten Listen.</p>';
+                return;
+            }
+            let listHtml = '<table><tr><th>Liste</th><th>Aktion</th></tr>';
+            existingData.forEach((list, index) => {
+                listHtml += `<tr><td>${list.name}</td>
+                    <td>
+                        <button class="button" onclick="continueList(${index})">Weiter bearbeiten</button>
+                        <button class="button" onclick="deleteList(${index})">Liste löschen</button>
+                    </td></tr>`;
+            });
+            listHtml += '</table>';
+            listSection.innerHTML = listHtml;
+        }
+
+        function continueList(index) {
+            const existingData = JSON.parse(localStorage.getItem('scannedDataList') || '[]');
+            localStorage.setItem('scannedData', JSON.stringify(existingData[index].data));
+            startNewList();
+        }
+
+        function deleteList(index) {
+            if (confirm("Sind Sie sicher, dass Sie diese Liste löschen möchten?")) {
+                let existingData = JSON.parse(localStorage.getItem('scannedDataList') || '[]');
+                existingData.splice(index, 1);
+                localStorage.setItem('scannedDataList', JSON.stringify(existingData));
+                displayList();
+                alert("Liste gelöscht.");
+            }
+        }
+
         function onScanSuccess(decodedText, decodedResult) {
-            console.log(`Code scanned = ${decodedText}`, decodedResult);
-            alert(`Scanned: ${decodedText}`);
+            console.log(`Code gescannt = ${decodedText}`, decodedResult);
+            alert(`Gescannt: ${decodedText}`);
             scannedCode = extractInfo(decodedText);
             document.getElementById("input-section").style.display = "block";
         }
 
         function extractInfo(decodedText) {
-            // Extrahiere den Teil des Textes, der die "Info" enthält
             const infoMatch = decodedText.match(/Info: (.*?)\n/);
             return infoMatch ? infoMatch[1] : decodedText;
         }
 
         function onScanFailure(error) {
-            console.warn(`QR error = ${error}`);
+            console.warn(`QR Fehler = ${error}`);
         }
 
         function initScanner() {
@@ -73,7 +143,7 @@
             const html5Qrcode = new Html5Qrcode("reader");
 
             Html5Qrcode.getCameras().then(devices => {
-                console.log("Devices found: ", devices);
+                console.log("Geräte gefunden: ", devices);
                 if (devices && devices.length) {
                     let cameraId = devices[0].id;
                     for (const device of devices) {
@@ -82,14 +152,14 @@
                             break;
                         }
                     }
-                    console.log("Starting scanner with camera ID: ", cameraId);
+                    console.log("Scanner starten mit Kamera ID: ", cameraId);
                     html5Qrcode.start(cameraId, config, onScanSuccess, onScanFailure)
-                    .catch(err => console.error("Error starting scanner: ", err));
+                    .catch(err => console.error("Fehler beim Starten des Scanners: ", err));
                 } else {
-                    console.error('No cameras found.');
-                    alert('No cameras found.');
+                    console.error('Keine Kameras gefunden.');
+                    alert('Keine Kameras gefunden.');
                 }
-            }).catch(err => console.error('Error getting cameras: ', err));
+            }).catch(err => console.error('Fehler beim Abrufen der Kameras: ', err));
         }
 
         function submitData() {
@@ -98,11 +168,11 @@
                 const data = JSON.parse(localStorage.getItem('scannedData') || '[]');
                 data.push({ code: scannedCode, quantity: quantity });
                 localStorage.setItem('scannedData', JSON.stringify(data));
-                alert('Data saved locally');
+                alert('Daten lokal gespeichert');
                 displayData();
                 document.getElementById("input-section").style.display = "none";
             } else {
-                alert('Please scan a code and enter a quantity.');
+                alert('Bitte scannen Sie einen Code und geben Sie eine Stückzahl ein.');
             }
         }
 
@@ -110,10 +180,10 @@
             const data = JSON.parse(localStorage.getItem('scannedData') || '[]');
             const display = document.getElementById('data-display');
             if (data.length === 0) {
-                display.innerHTML = '<p>No data stored.</p>';
+                display.innerHTML = '<p>Keine gespeicherten Daten.</p>';
                 return;
             }
-            let tableHtml = '<table><tr><th>Code</th><th>Quantity</th></tr>';
+            let tableHtml = '<table><tr><th>Code</th><th>Stückzahl</th></tr>';
             data.forEach(row => {
                 tableHtml += `<tr><td>${row.code}</td><td>${row.quantity}</td></tr>`;
             });
@@ -127,7 +197,7 @@
         function exportData() {
             const data = JSON.parse(localStorage.getItem('scannedData') || '[]');
             if (data.length === 0) {
-                alert('No data to export');
+                alert('Keine Daten zum Exportieren');
                 return;
             }
             let csvContent = "data:text/csv;charset=utf-8,code,quantity\n";
@@ -141,22 +211,23 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            saveList(data);
         }
 
-        function checkExistingData() {
-            const existingData = localStorage.getItem('scannedData');
-            if (existingData) {
-                const continueEditing = confirm("Do you want to continue editing the existing list?");
-                if (!continueEditing) {
-                    localStorage.removeItem('scannedData');
+        function saveList(data) {
+            const listName = prompt("Bitte geben Sie einen Namen für die Liste ein:", `Liste_${new Date().toISOString().slice(0, 10)}`);
+            if (listName) {
+                const existingData = JSON.parse(localStorage.getItem('scannedDataList') || '[]');
+                existingData.push({ name: listName, data: data });
+                if (existingData.length > 10) {
+                    existingData.shift(); // Entfernen der ältesten Liste, wenn mehr als 10
                 }
+                localStorage.setItem('scannedDataList', JSON.stringify(existingData));
             }
         }
 
         window.onload = () => {
-            checkExistingData();
-            initScanner();
-            displayData();
+            document.getElementById('menu').style.display = 'block';
         };
     </script>
 </body>
