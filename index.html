@@ -5,45 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Scanner</title>
     <script src="js/html5-qrcode.min.js"></script>
-    <script src="https://alcdn.msauth.net/browser/2.12.0/js/msal-browser.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@microsoft/microsoft-graph-client/lib/graph-js-sdk-web.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #reader {
+            width: 300px;
+            margin: auto;
+        }
+        #input-section {
+            margin-top: 20px;
+        }
+        #data-display {
+            margin-top: 20px;
+        }
+        #export-button {
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
     <h1>QR Code Scanner</h1>
-    <div id="reader" style="width: 300px;"></div>
+    <div id="reader"></div>
     <div id="input-section" style="display: none;">
         <label for="quantity">Enter Quantity:</label>
         <input type="number" id="quantity" name="quantity">
         <button onclick="submitData()">Submit</button>
     </div>
+    <div id="data-display"></div>
+    <button id="export-button" onclick="exportData()" style="display: none;">Export Data</button>
     <script>
-        const msalConfig = {
-            auth: {
-                clientId: '46379ca2-3a70-475c-b063-095bf3a112cf', // Ihre Client-ID
-                redirectUri: 'https://papacpu.github.io/qr-code-scanner-app-2/', // Ihre GitHub Pages URL
-            }
-        };
-
-        const msalClient = new msal.PublicClientApplication(msalConfig);
-
-        const graphClient = MicrosoftGraph.Client.init({
-            authProvider: (done) => {
-                msalClient.acquireTokenSilent({
-                    scopes: ["Files.ReadWrite"]
-                }).then(response => {
-                    done(null, response.accessToken);
-                }).catch(err => {
-                    msalClient.acquireTokenPopup({
-                        scopes: ["Files.ReadWrite"]
-                    }).then(response => {
-                        done(null, response.accessToken);
-                    }).catch(err => {
-                        done(err, null);
-                    });
-                });
-            }
-        });
-
         let scannedCode = '';
 
         function onScanSuccess(decodedText, decodedResult) {
@@ -64,7 +55,7 @@
             Html5Qrcode.getCameras().then(devices => {
                 console.log("Devices found: ", devices);
                 if (devices && devices.length) {
-                    let cameraId = devices[0].id;  // Fallback in case no back camera is found
+                    let cameraId = devices[0].id;
                     for (const device of devices) {
                         if (device.label.toLowerCase().includes('back')) {
                             cameraId = device.id;
@@ -73,42 +64,59 @@
                     }
                     console.log("Starting scanner with camera ID: ", cameraId);
                     html5Qrcode.start(cameraId, config, onScanSuccess, onScanFailure)
-                    .catch(err => {
-                        console.error("Error starting scanner: ", err);
-                    });
+                    .catch(err => console.error("Error starting scanner: ", err));
                 } else {
                     console.error('No cameras found.');
                     alert('No cameras found.');
                 }
-            }).catch(err => {
-                console.error('Error getting cameras: ', err);
-                alert('Error getting cameras: ' + err);
-            });
+            }).catch(err => console.error('Error getting cameras: ', err));
         }
 
         function submitData() {
             const quantity = document.getElementById('quantity').value;
             if (scannedCode && quantity) {
-                const fileName = 'Inventur.xlsx'; // Ihr Dateiname
-                const filePath = `/drive/root:/OneDrive%20-%20Huzap%20GmbH/${fileName}`; // Ihr Pfad
-
-                console.log("Submitting data to:", filePath);
-
-                graphClient.api(filePath).get().then(response => {
-                    console.log("Response received:", response);
-                    // Hier können Sie den Dateiinhalt aktualisieren
-                    alert('Data submitted successfully');
-                }).catch(error => {
-                    console.error('Error:', error);
-                    alert('Error submitting data: ' + JSON.stringify(error));
-                });
+                const data = JSON.parse(localStorage.getItem('scannedData') || '[]');
+                data.push({ code: scannedCode, quantity: quantity });
+                localStorage.setItem('scannedData', JSON.stringify(data));
+                alert('Data saved locally');
+                displayData();
+                document.getElementById("input-section").style.display = "none";
             } else {
                 alert('Please scan a code and enter a quantity.');
             }
         }
 
+        function displayData() {
+            const data = JSON.parse(localStorage.getItem('scannedData') || '[]');
+            const display = document.getElementById('data-display');
+            display.innerHTML = '<h2>Stored Data</h2><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            if (data.length > 0) {
+                document.getElementById('export-button').style.display = 'block';
+            }
+        }
+
+        function exportData() {
+            const data = JSON.parse(localStorage.getItem('scannedData') || '[]');
+            if (data.length === 0) {
+                alert('No data to export');
+                return;
+            }
+            let csvContent = "data:text/csv;charset=utf-8,code,quantity\n";
+            data.forEach(row => {
+                csvContent += `${row.code},${row.quantity}\n`;
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "scanned_data.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
         window.onload = () => {
             initScanner();
+            displayData();
         };
     </script>
 </body>
