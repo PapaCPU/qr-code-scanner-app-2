@@ -71,6 +71,7 @@
     <script>
         let scannedCode = '';
         let isEditing = false;
+        let editingIndex = -1;
 
         function startNewList() {
             const continueWithExisting = confirm("Möchten Sie die bestehende Liste weiter bearbeiten?");
@@ -80,6 +81,7 @@
             }
             document.getElementById('menu').style.display = 'none';
             document.getElementById('reader').style.display = 'block';
+            document.getElementById('list-section').style.display = 'none';
             initScanner();
         }
 
@@ -113,7 +115,8 @@
             localStorage.setItem('scannedData', JSON.stringify(existingData[index].data));
             document.getElementById('menu').style.display = 'none';
             document.getElementById('reader').style.display = 'block';
-            initScanner();
+            document.getElementById('list-section').style.display = 'none';
+            displayData();
         }
 
         function deleteList(index) {
@@ -170,18 +173,23 @@
             const quantity = document.getElementById('quantity').value;
             if (scannedCode && quantity) {
                 let data = JSON.parse(localStorage.getItem('scannedData') || '[]');
-                let existingItem = data.find(item => item.code === scannedCode);
-                if (existingItem && !isEditing) {
-                    alert('Code bereits vorhanden. Stückzahl wird aktualisiert.');
-                    existingItem.quantity = quantity;
+                if (isEditing) {
+                    data[editingIndex].quantity = quantity;
+                    isEditing = false;
+                    editingIndex = -1;
                 } else {
-                    data.push({ code: scannedCode, quantity: quantity });
+                    let existingItem = data.find(item => item.code === scannedCode);
+                    if (existingItem) {
+                        alert('Code bereits vorhanden. Stückzahl wird aktualisiert.');
+                        existingItem.quantity = quantity;
+                    } else {
+                        data.push({ code: scannedCode, quantity: quantity });
+                    }
                 }
                 localStorage.setItem('scannedData', JSON.stringify(data));
                 alert('Daten lokal gespeichert');
                 displayData();
                 document.getElementById("input-section").style.display = "none";
-                isEditing = false;
             } else {
                 alert('Bitte scannen Sie einen Code und geben Sie eine Stückzahl ein.');
             }
@@ -213,6 +221,7 @@
             document.getElementById('quantity').value = item.quantity;
             document.getElementById('input-section').style.display = 'block';
             isEditing = true;
+            editingIndex = index;
         }
 
         function exportData() {
