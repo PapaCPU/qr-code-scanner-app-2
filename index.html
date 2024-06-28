@@ -232,7 +232,7 @@
             editingIndex = index;
         }
 
-        function deleteItem(index) {        function deleteItem(index) {
+        function deleteItem(index) {       
             let data = JSON.parse(localStorage.getItem('scannedData') || '[]');
             data.splice(index, 1);
             localStorage.setItem('scannedData', JSON.stringify(data));
