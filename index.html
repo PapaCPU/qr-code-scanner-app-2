@@ -10,6 +10,8 @@
             font-family: Arial, sans-serif;
             background-color: #d3d3d3; /* Hellgrauer Hintergrund */
             text-align: center;
+            margin: 0;
+            padding: 0;
         }
         #reader {
             width: 100%;
@@ -63,6 +65,15 @@
         .action-buttons {
             display: flex;
             justify-content: space-around;
+        }
+        @media (max-width: 600px) {
+            .button {
+                font-size: 18px;
+                padding: 15px 30px;
+            }
+            #data-display {
+                max-height: 200px;
+            }
         }
     </style>
 </head>
@@ -221,7 +232,7 @@
                     <button class="button" onclick="deleteItem(${index})">Löschen</button>
                 </td></tr>`;
             });
-            tableHtml += '</table>';
+                        tableHtml += '</table>';
             display.innerHTML = tableHtml;
             if (data.length > 0) {
                 document.getElementById('export-button').style.display = 'block';
