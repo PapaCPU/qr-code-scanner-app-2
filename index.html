@@ -229,10 +229,11 @@
                 tableHtml += `<tr><td>${row.code}</td><td>${row.quantity}</td>
                 <td class="action-buttons">
                     <button class="button" onclick="editItem(${index})">Bearbeiten</button>
+                    <button class="button" onclick="deleteItem(${index})">
                     <button class="button" onclick="deleteItem(${index})">Löschen</button>
                 </td></tr>`;
             });
-                        tableHtml += '</table>';
+            tableHtml += '</table>';
             display.innerHTML = tableHtml;
             if (data.length > 0) {
                 document.getElementById('export-button').style.display = 'block';
