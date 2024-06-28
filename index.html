@@ -28,8 +28,8 @@
             text-align: center;
             text-decoration: none;
             display: block;
-            font-size: 20px;
-            margin: 10px auto;
+            font-size: 24px;
+            margin: 20px auto;
             cursor: pointer;
             border-radius: 12px; /* Abgerundete Ecken */
             width: 80%;
@@ -57,6 +57,10 @@
         #back-button {
             display: none;
             margin: 10px auto;
+        }
+        .action-buttons {
+            display: flex;
+            justify-content: space-around;
         }
     </style>
 </head>
@@ -107,7 +111,7 @@
             let listHtml = '<table><tr><th>Liste</th><th>Aktion</th></tr>';
             existingData.forEach((list, index) => {
                 listHtml += `<tr><td>${list.name}</td>
-                    <td>
+                    <td class="action-buttons">
                         <button class="button" onclick="continueList(${index})">Weiter bearbeiten</button>
                         <button class="button" onclick="deleteList(${index})">Liste löschen</button>
                     </td></tr>`;
@@ -210,7 +214,7 @@
             let tableHtml = '<table><tr><th>Code</th><th>Stückzahl</th><th>Aktion</th></tr>';
             data.forEach((row, index) => {
                 tableHtml += `<tr><td>${row.code}</td><td>${row.quantity}</td>
-                <td>
+                <td class="action-buttons">
                     <button class="button" onclick="editItem(${index})">Bearbeiten</button>
                     <button class="button" onclick="deleteItem(${index})">Löschen</button>
                 </td></tr>`;
@@ -232,7 +236,7 @@
             editingIndex = index;
         }
 
-        function deleteItem(index) {       
+        function deleteItem(index) {
             let data = JSON.parse(localStorage.getItem('scannedData') || '[]');
             data.splice(index, 1);
             localStorage.setItem('scannedData', JSON.stringify(data));
@@ -284,4 +288,3 @@
     </script>
 </body>
 </html>
-
