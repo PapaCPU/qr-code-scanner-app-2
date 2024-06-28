@@ -1,30 +1,32 @@
 from flask import Flask, request, jsonify
-import pandas as pd
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
-@app.route('/update_excel', methods=['POST'])
-def update_excel():
-    data = request.json
-    article_number = data['info']
-    quantity = int(data['quantity'])
+# Beispiel für eine einfache Datenstruktur zur Speicherung
+data_storage = []
 
-    file_path = 'path_to_your_OneDrive_excel_file.xlsx'
-    
-    # Excel-Datei laden
-    df = pd.read_excel(file_path)
-    
-    # Artikelnummer (Info) finden und Stückzahl aktualisieren
-    if article_number in df['Info'].values:
-        df.loc[df['Info'] == article_number, 'Stückzahl'] += quantity
-    else:
-        # Falls die Artikelnummer nicht existiert, neue Zeile hinzufügen
-        new_row = {'Info': article_number, 'Stückzahl': quantity}
-        df = df.append(new_row, ignore_index=True)
-    
-    # Änderungen speichern
-    df.to_excel(file_path, index=False)
-    return jsonify({"message": f"Artikelnummer: {article_number} mit Stückzahl: {quantity} wurde erfolgreich aktualisiert."})
+@app.route('/submit_data', methods=['POST'])
+def submit_data():
+    try:
+        data = request.json
+        # Hier können Sie die empfangenen Daten verarbeiten und speichern
+        data_storage.append(data)
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/get_data', methods=['GET'])
+def get_data():
+    try:
+        return jsonify(data_storage)
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({"status": "error", "message": "Internal server error"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
