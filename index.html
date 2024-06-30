@@ -74,9 +74,6 @@
             #data-display {
                 max-height: 200px;
             }
-            #menu, #list-section, #back-button {
-                margin-top: 10px;
-            }
         }
     </style>
 </head>
@@ -101,7 +98,6 @@
         let scannedCode = '';
         let isEditing = false;
         let editingIndex = -1;
-
 
         function startNewList() {
             localStorage.removeItem('scannedData');
@@ -233,6 +229,7 @@
                 tableHtml += `<tr><td>${row.code}</td><td>${row.quantity}</td>
                 <td class="action-buttons">
                     <button class="button" onclick="editItem(${index})">Bearbeiten</button>
+                    <button class="button" onclick="deleteItem(${index})">
                     <button class="button" onclick="deleteItem(${index})">Löschen</button>
                 </td></tr>`;
             });
@@ -256,27 +253,52 @@
         function deleteItem(index) {
             let data = JSON.parse(localStorage.getItem('scannedData') || '[]');
             data.splice(index, 1);
-            localStorage.setItem('scannedData', JSON.stringify(data)); ('scannedData', JSON.stringify(data));
-displayData();
-}
+            localStorage.setItem('scannedData', JSON.stringify(data));
+            displayData();
+        }
 
-function exportData() {
-    const data = JSON.parse(localStorage.getItem('scannedData') || '[]');
-    if (data.length === 0) {
-        alert('Keine Daten zum Exportieren vorhanden.');
-        return;
-    }
-    const csvContent = "data:text/csv;charset=utf-8," 
-        + data.map(e => `${e.code},${e.quantity}`).join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "scanned_data.csv");
-    document.body.appendChild(link); // Required for FF
-    link.click();
-    document.body.removeChild(link);
-}
+        function exportData() {
+            const data = JSON.parse(localStorage.getItem('scannedData') || '[]');
+            if (data.length === 0) {
+                alert('Keine Daten zum Exportieren');
+                return;
+            }
+            let csvContent = "data:text/csv;charset=utf-8,code,quantity\n";
+            data.forEach(row => {
+                csvContent += `${row.code},${row.quantity}\n`;
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `scanned_data_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            saveList(data);
+        }
 
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('menu').style.display = 'block';
-});
+        function saveList(data) {
+            const listName = `Liste_${new Date().toISOString().slice(0, 10)}`;
+            const existingData = JSON.parse(localStorage.getItem('scannedDataList') || '[]');
+            existingData.push({ name: listName, data: data });
+            if (existingData.length > 10) {
+                existingData.shift(); // Entfernen der ältesten Liste, wenn mehr als 10
+            }
+            localStorage.setItem('scannedDataList', JSON.stringify(existingData));
+        }
+
+        function goBack() {
+            document.getElementById('menu').style.display = 'block';
+            document.getElementById('reader').style.display = 'none';
+            document.getElementById('input-section').style.display = 'none';
+            document.getElementById('list-section').style.display = 'none';
+            document.getElementById('back-button').style.display = 'none';
+            displayData();
+        }
+
+        window.onload = () => {
+            document.getElementById('menu').style.display = 'block';
+        };
+    </script>
+</body>
+</html>
