@@ -8,27 +8,21 @@ document.addEventListener("DOMContentLoaded", () => {
     function openQRScanner() {
         reader.style.display = 'block';
         listActions.style.display = 'none';
-        new Html5QrcodeScanner(
-            "reader", { fps: 10, qrbox: 250 }
-        ).render(onScanSuccess, onScanFailure);
+        initScanner();
     }
 
     function createList() {
         editMode = false;
         reader.style.display = 'block';
         listActions.style.display = 'none';
-        new Html5QrcodeScanner(
-            "reader", { fps: 10, qrbox: 250 }
-        ).render(onScanSuccess, onScanFailure);
+        initScanner();
     }
 
     function editList() {
         editMode = true;
         reader.style.display = 'block';
         listActions.style.display = 'none';
-        new Html5QrcodeScanner(
-            "reader", { fps: 10, qrbox: 250 }
-        ).render(onScanSuccess, onScanFailure);
+        initScanner();
     }
 
     function onScanSuccess(decodedText, decodedResult) {
@@ -62,6 +56,30 @@ document.addEventListener("DOMContentLoaded", () => {
         quantityInput.focus();
         quantityInput.select();
         // Logic to update the current item
+    }
+
+    function initScanner() {
+        const config = { fps: 10, qrbox: 250 };
+        const html5QrcodeScanner = new Html5Qrcode("reader");
+
+        Html5Qrcode.getCameras().then(devices => {
+            console.log("Geräte gefunden: ", devices);
+            if (devices && devices.length) {
+                let cameraId = devices[0].id;
+                for (const device of devices) {
+                    if (device.label.toLowerCase().includes('back')) {
+                        cameraId = device.id;
+                        break;
+                    }
+                }
+                console.log("Scanner starten mit Kamera ID: ", cameraId);
+                html5QrcodeScanner.start(cameraId, config, onScanSuccess, onScanFailure)
+                .catch(err => console.error("Fehler beim Starten des Scanners: ", err));
+            } else {
+                console.error('Keine Kameras gefunden.');
+                alert('Keine Kameras gefunden.');
+            }
+        }).catch(err => console.error('Fehler beim Abrufen der Kameras: ', err));
     }
 
     window.openQRScanner = openQRScanner;
