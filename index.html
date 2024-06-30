@@ -81,9 +81,10 @@
             cursor: pointer;
             font-size: 16px;
         }
-        /* Setzen der Schriftgröße auf 16px, um Zoom zu vermeiden */
+        /* Verhindern des Zooms durch Setzen des inputmode auf numeric */
         input[type=number] {
             font-size: 16px;
+            inputmode: numeric;
         }
     </style>
 </head>
@@ -98,7 +99,7 @@
     <div id="reader" style="display: none;"></div>
     <div id="input-section" style="display: none;">
         <label for="quantity">Stückzahl eingeben:</label>
-        <input type="tel" id="quantity" name="quantity" autofocus>
+        <input type="number" id="quantity" name="quantity" autofocus inputmode="numeric">
         <button class="button" onclick="submitData()">Bestätigen</button>
     </div>
     <div id="list-section" style="display: none;"></div>
@@ -195,8 +196,13 @@
             const quantity = document.getElementById('quantity').value;
             if (scannedCode && quantity) {
                 let data = JSON.parse(localStorage.getItem('scannedData') || '[]');
-                // Kein Überschreiben bestehender Einträge
-                data.push({ code: scannedCode, quantity: quantity });
+                if (isEditing) {
+                    data[editingIndex].quantity = quantity;
+                    isEditing = false;
+                    editingIndex = -1;
+                } else {
+                    data.push({ code: scannedCode, quantity: quantity });
+                }
                 localStorage.setItem('scannedData', JSON.stringify(data));
                 displayData();
                 document.getElementById("input-section").style.display = "none";
