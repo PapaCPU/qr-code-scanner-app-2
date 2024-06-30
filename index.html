@@ -2,9 +2,9 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>QR Code Scanner</title>
-    <script src="js/html5-qrcode.min.js"></script> <!-- Pfad zur lokalen Datei -->
+    <script src="js/html5-qrcode.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -191,18 +191,8 @@
             const quantity = document.getElementById('quantity').value;
             if (scannedCode && quantity) {
                 let data = JSON.parse(localStorage.getItem('scannedData') || '[]');
-                if (isEditing) {
-                    data[editingIndex].quantity = quantity;
-                    isEditing = false;
-                    editingIndex = -1;
-                } else {
-                    let existingItem = data.find(item => item.code === scannedCode);
-                    if (existingItem) {
-                        existingItem.quantity = quantity;
-                    } else {
-                        data.push({ code: scannedCode, quantity: quantity });
-                    }
-                }
+                // Kein Überschreiben bestehender Einträge
+                data.push({ code: scannedCode, quantity: quantity });
                 localStorage.setItem('scannedData', JSON.stringify(data));
                 displayData();
                 document.getElementById("input-section").style.display = "none";
