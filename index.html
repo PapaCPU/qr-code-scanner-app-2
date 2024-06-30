@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Scanner</title>
-    <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+    <script src="js/html5-qrcode.min.js"></script> <!-- Pfad zur lokalen Datei -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -183,26 +183,8 @@
 
         function initScanner() {
             const config = { fps: 10, qrbox: 250 };
-            const html5Qrcode = new Html5Qrcode("reader");
-
-            Html5Qrcode.getCameras().then(devices => {
-                console.log("Geräte gefunden: ", devices);
-                if (devices && devices.length) {
-                    let cameraId = devices[0].id;
-                    for (const device of devices) {
-                        if (device.label.toLowerCase().includes('back')) {
-                            cameraId = device.id;
-                            break;
-                        }
-                    }
-                    console.log("Scanner starten mit Kamera ID: ", cameraId);
-                    html5Qrcode.start(cameraId, config, onScanSuccess, onScanFailure)
-                    .catch(err => console.error("Fehler beim Starten des Scanners: ", err));
-                } else {
-                    console.error('Keine Kameras gefunden.');
-                    alert('Keine Kameras gefunden.');
-                }
-            }).catch(err => console.error('Fehler beim Abrufen der Kameras: ', err));
+            const html5QrcodeScanner = new Html5QrcodeScanner("reader", config, /* verbose= */ false);
+            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
         }
 
         function submitData() {
