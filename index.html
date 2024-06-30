@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Scanner</title>
-    <script src="js/html5-qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+    <script src="js/script.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -78,9 +79,11 @@
     </style>
 </head>
 <body>
+    <h1>QR Code Scanner</h1>
     <div id="menu">
-        <button class="button" onclick="startNewList()">Neue Liste</button>
-        <button class="button" onclick="showList()">Bearbeiten</button>
+        <div class="menu-item button" onclick="openQRScanner()">QR Scanner</div>
+        <div class="menu-item button" onclick="createList()">Liste erstellen</div>
+        <div class="menu-item button" onclick="editList()">Liste bearbeiten</div>
     </div>
     <div id="back-button">
         <button class="button" onclick="goBack()">Zurück</button>
@@ -94,7 +97,91 @@
     <div id="list-section" style="display: none;"></div>
     <div id="data-display"></div>
     <button id="export-button" class="button" onclick="exportData()" style="display: none;">Daten exportieren</button>
+    <div id="list-actions" style="display: none;">
+        <input type="number" id="quantity" placeholder="Stückzahl" />
+        <div class="menu-item button" onclick="deleteItem()">🗑️</div>
+        <div class="menu-item button" onclick="editItem()">✏️</div>
+    </div>
+    <div id="popup" style="display: none;">
+        <p>Möchten Sie diesen Eintrag wirklich löschen?</p>
+        <button onclick="confirmDelete(true)">Ja</button>
+        <button onclick="confirmDelete(false)">Nein</button>
+    </div>
     <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const reader = document.getElementById("reader");
+            const listActions = document.getElementById("list-actions");
+            const popup = document.getElementById("popup");
+            let editMode = false;
+            let currentItemIndex = null;
+
+            function openQRScanner() {
+                reader.style.display = 'block';
+                listActions.style.display = 'none';
+                new Html5QrcodeScanner(
+                    "reader", { fps: 10, qrbox: 250 }
+                ).render(onScanSuccess, onScanFailure);
+            }
+
+            function createList() {
+                editMode = false;
+                reader.style.display = 'block';
+                listActions.style.display = 'none';
+                new Html5QrcodeScanner(
+                    "reader", { fps: 10, qrbox: 250 }
+                ).render(onScanSuccess, onScanFailure);
+            }
+
+            function editList() {
+                editMode = true;
+                reader.style.display = 'block';
+                listActions.style.display = 'none';
+                new Html5QrcodeScanner(
+                    "reader", { fps: 10, qrbox: 250 }
+                ).render(onScanSuccess, onScanFailure);
+            }
+
+            function onScanSuccess(decodedText, decodedResult) {
+                alert(`Scanned: ${decodedText}`);
+                // Logic to add scanned item to list
+                if (editMode) {
+                    // Append to existing list
+                } else {
+                    // Create new list
+                }
+            }
+
+            function onScanFailure(error) {
+                console.warn(`QR error = ${error}`);
+                alert(`QR error: ${error}`);
+            }
+
+            function deleteItem() {
+                popup.style.display = 'block';
+            }
+
+            function confirmDelete(confirm) {
+                if (confirm && currentItemIndex !== null) {
+                    // Logic to delete the current item
+                }
+                popup.style.display = 'none';
+            }
+
+            function editItem() {
+                const quantityInput = document.getElementById("quantity");
+                quantityInput.focus();
+                quantityInput.select();
+                // Logic to update the current item
+            }
+
+            window.openQRScanner = openQRScanner;
+            window.createList = createList;
+            window.editList = editList;
+            window.deleteItem = deleteItem;
+            window.confirmDelete = confirmDelete;
+            window.editItem = editItem;
+        });
+
         let scannedCode = '';
         let isEditing = false;
         let editingIndex = -1;
@@ -153,46 +240,6 @@
             }
         }
 
-        function onScanSuccess(decodedText, decodedResult) {
-            console.log(`Code gescannt = ${decodedText}`, decodedResult);
-            scannedCode = extractInfo(decodedText);
-            document.getElementById("input-section").style.display = "block";
-            document.getElementById('quantity').focus();
-        }
-
-        function extractInfo(decodedText) {
-            const infoMatch = decodedText.match(/Info: (.*?)\n/);
-            return infoMatch ? infoMatch[1] : decodedText;
-        }
-
-        function onScanFailure(error) {
-            console.warn(`QR Fehler = ${error}`);
-        }
-
-        function initScanner() {
-            const config = { fps: 10, qrbox: 250 };
-            const html5Qrcode = new Html5Qrcode("reader");
-
-            Html5Qrcode.getCameras().then(devices => {
-                console.log("Geräte gefunden: ", devices);
-                if (devices && devices.length) {
-                    let cameraId = devices[0].id;
-                    for (const device of devices) {
-                        if (device.label.toLowerCase().includes('back')) {
-                            cameraId = device.id;
-                            break;
-                        }
-                    }
-                    console.log("Scanner starten mit Kamera ID: ", cameraId);
-                    html5Qrcode.start(cameraId, config, onScanSuccess, onScanFailure)
-                    .catch(err => console.error("Fehler beim Starten des Scanners: ", err));
-                } else {
-                    console.error('Keine Kameras gefunden.');
-                    alert('Keine Kameras gefunden.');
-                }
-            }).catch(err => console.error('Fehler beim Abrufen der Kameras: ', err));
-        }
-
         function submitData() {
             const quantity = document.getElementById('quantity').value;
             if (scannedCode && quantity) {
@@ -229,7 +276,6 @@
                 tableHtml += `<tr><td>${row.code}</td><td>${row.quantity}</td>
                 <td class="action-buttons">
                     <button class="button" onclick="editItem(${index})">Bearbeiten</button>
-                    <button class="button" onclick="deleteItem(${index})">
                     <button class="button" onclick="deleteItem(${index})">Löschen</button>
                 </td></tr>`;
             });
@@ -299,6 +345,7 @@
         window.onload = () => {
             document.getElementById('menu').style.display = 'block';
         };
+
     </script>
 </body>
 </html>
