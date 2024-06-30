@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Scanner</title>
-    <script src="js/html5-qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -75,6 +75,12 @@
                 max-height: 200px;
             }
         }
+        .icon-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
@@ -94,10 +100,16 @@
     <div id="list-section" style="display: none;"></div>
     <div id="data-display"></div>
     <button id="export-button" class="button" onclick="exportData()" style="display: none;">Daten exportieren</button>
+    <div id="popup" style="display: none;">
+        <p>Möchten Sie diesen Eintrag wirklich löschen?</p>
+        <button class="button" onclick="confirmDelete(true)">Ja</button>
+        <button class="button" onclick="confirmDelete(false)">Nein</button>
+    </div>
     <script>
         let scannedCode = '';
         let isEditing = false;
         let editingIndex = -1;
+        let deleteIndex = -1;
 
         function startNewList() {
             localStorage.removeItem('scannedData');
@@ -228,8 +240,8 @@
             data.forEach((row, index) => {
                 tableHtml += `<tr><td>${row.code}</td><td>${row.quantity}</td>
                 <td class="action-buttons">
-                    <button class="button" onclick="editItem(${index})">Bearbeiten</button>
-                    <button class="button" onclick="deleteItem(${index})">Löschen</button>
+                    <button class="icon-button" onclick="editItem(${index})">✏️</button>
+                    <button class="icon-button" onclick="confirmDeleteItem(${index})">🗑️</button>
                 </td></tr>`;
             });
             tableHtml += '</table>';
@@ -245,8 +257,26 @@
             scannedCode = item.code;
             document.getElementById('quantity').value = item.quantity;
             document.getElementById('input-section').style.display = 'block';
+            document.getElementById('quantity').focus();
+            document.getElementById('quantity').select();
             isEditing = true;
             editingIndex = index;
+        }
+
+        function confirmDeleteItem(index) {
+            deleteIndex = index;
+            document.getElementById('popup').style.display = 'block';
+        }
+
+        function confirmDelete(confirm) {
+            if (confirm && deleteIndex !== -1) {
+                let data = JSON.parse(localStorage.getItem('scannedData') || '[]');
+                data.splice(deleteIndex, 1);
+                localStorage.setItem('scannedData', JSON.stringify(data));
+                displayData();
+            }
+            document.getElementById('popup').style.display = 'none';
+            deleteIndex = -1;
         }
 
         function deleteItem(index) {
