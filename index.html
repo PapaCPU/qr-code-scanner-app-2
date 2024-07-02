@@ -8,7 +8,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #d3d3d3; /* Hellgrauer Hintergrund */
+            background-color: #d3d3d3;
             text-align: center;
             margin: 0;
             padding: 0;
@@ -23,7 +23,7 @@
             text-align: center;
         }
         .button {
-            background-color: #f0f8ff; /* Helles Blau */
+            background-color: #f0f8ff;
             border: none;
             color: black;
             padding: 20px 40px;
@@ -33,7 +33,7 @@
             font-size: 24px;
             margin: 20px auto;
             cursor: pointer;
-            border-radius: 12px; /* Abgerundete Ecken */
+            border-radius: 12px;
             width: 80%;
             max-width: 400px;
         }
@@ -41,8 +41,8 @@
             margin-top: 20px;
             max-width: 600px;
             margin: auto;
-            overflow-y: auto; /* Ermöglicht das Scrollen */
-            max-height: 300px; /* Begrenzung der Höhe für Scrollen */
+            overflow-y: auto;
+            max-height: 300px;
         }
         table {
             width: 100%;
@@ -81,7 +81,6 @@
             cursor: pointer;
             font-size: 16px;
         }
-        /* Verhindern des Zooms durch Setzen des inputmode auf numeric */
         input[type=number] {
             font-size: 16px;
             inputmode: numeric;
@@ -293,7 +292,7 @@
             const existingData = JSON.parse(localStorage.getItem('scannedDataList') || '[]');
             existingData.push({ name: listName, data: data });
             if (existingData.length > 10) {
-                existingData.shift(); // Entfernen der ältesten Liste, wenn mehr als 10
+                existingData.shift();
             }
             localStorage.setItem('scannedDataList', JSON.stringify(existingData));
         }
