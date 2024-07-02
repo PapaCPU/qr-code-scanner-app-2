@@ -18,7 +18,7 @@
             max-width: 600px;
             margin: auto;
         }
-        #input-section, #menu, #list-section, #back-button {
+        #menu, #list-section, #back-button {
             margin-top: 20px;
             text-align: center;
         }
@@ -85,31 +85,24 @@
             font-size: 16px;
             inputmode: numeric;
         }
-        #scanner-container {
+        .modal {
             display: none;
             position: fixed;
-            top: 0;
+            z-index: 1;
             left: 0;
+            top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.8);
-            z-index: 1000;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
         }
-        #scanner-content {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: white;
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
             padding: 20px;
-            border-radius: 10px;
-        }
-        #close-scanner {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            font-size: 24px;
-            cursor: pointer;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 400px;
         }
     </style>
 </head>
@@ -118,30 +111,22 @@
         <button class="button" onclick="startNewList()">Neue Liste</button>
         <button class="button" onclick="showList()">Bearbeiten</button>
     </div>
-
     <div id="back-button">
         <button class="button" onclick="goBack()">Zurück</button>
     </div>
-
-    <div id="scanner-container">
-        <div id="scanner-content">
-            <div id="close-scanner" onclick="closeScanner()">&times;</div>
-            <div id="reader"></div>
+    <div id="reader" style="display: none;"></div>
+    <div id="input-modal" class="modal">
+        <div class="modal-content">
+            <h2>Stückzahl eingeben</h2>
+            <p>Gescannter Code: <span id="scanned-code"></span></p>
+            <input type="number" id="quantity" name="quantity" inputmode="numeric">
+            <button class="button" onclick="submitData()">Bestätigen</button>
+            <button class="button" onclick="closeModal()">Abbrechen</button>
         </div>
     </div>
-
-    <div id="input-section" style="display: none;">
-        <label for="quantity">Stückzahl eingeben:</label>
-        <input type="number" id="quantity" name="quantity" autofocus inputmode="numeric">
-        <button class="button" onclick="submitData()">Bestätigen</button>
-    </div>
-
     <div id="list-section" style="display: none;"></div>
-
     <div id="data-display"></div>
-
     <button id="export-button" class="button" onclick="exportData()" style="display: none;">Daten exportieren</button>
-
     <div id="popup" style="display: none;">
         <p>Möchten Sie diesen Eintrag wirklich löschen?</p>
         <button class="button" onclick="confirmDelete(true)">Ja</button>
@@ -153,12 +138,11 @@
         let isEditing = false;
         let editingIndex = -1;
         let deleteIndex = -1;
-        let html5QrcodeScanner;
 
         function startNewList() {
             localStorage.removeItem('scannedData');
             document.getElementById('menu').style.display = 'none';
-            document.getElementById('scanner-container').style.display = 'block';
+            document.getElementById('reader').style.display = 'block';
             document.getElementById('back-button').style.display = 'block';
             initScanner();
         }
@@ -173,19 +157,17 @@
         function displayList() {
             const listSection = document.getElementById('list-section');
             const existingData = JSON.parse(localStorage.getItem('scannedDataList') || '[]');
-
             if (existingData.length === 0) {
                 listSection.innerHTML = '<p>Keine gespeicherten Listen.</p>';
                 return;
             }
-
             let listHtml = '<table><tr><th>Liste</th><th>Aktion</th></tr>';
             existingData.forEach((list, index) => {
                 listHtml += `<tr><td>${list.name}</td>
-                    <td class="action-buttons">
-                        <button class="button" onclick="continueList(${index})">Weiter bearbeiten</button>
-                        <button class="button" onclick="deleteList(${index})">Liste löschen</button>
-                    </td></tr>`;
+                <td class="action-buttons">
+                <button class="button" onclick="continueList(${index})">Weiter bearbeiten</button>
+                <button class="button" onclick="deleteList(${index})">Liste löschen</button>
+                </td></tr>`;
             });
             listHtml += '</table>';
             listSection.innerHTML = listHtml;
@@ -196,7 +178,7 @@
             localStorage.setItem('scannedData', JSON.stringify(existingData[index].data));
             document.getElementById('menu').style.display = 'none';
             document.getElementById('list-section').style.display = 'none';
-            document.getElementById('scanner-container').style.display = 'block';
+            document.getElementById('reader').style.display = 'block';
             document.getElementById('back-button').style.display = 'block';
             initScanner();
             displayData();
@@ -214,9 +196,10 @@
         function onScanSuccess(decodedText, decodedResult) {
             console.log(`Code gescannt = ${decodedText}`, decodedResult);
             scannedCode = extractInfo(decodedText);
-            document.getElementById("input-section").style.display = "block";
+            document.getElementById("scanned-code").textContent = scannedCode;
+            document.getElementById("input-modal").style.display = "block";
+            document.getElementById('quantity').value = '';
             document.getElementById('quantity').focus();
-            closeScanner();
         }
 
         function extractInfo(decodedText) {
@@ -230,15 +213,8 @@
 
         function initScanner() {
             const config = { fps: 10, qrbox: 250 };
-            html5QrcodeScanner = new Html5QrcodeScanner("reader", config, /* verbose= */ false);
+            const html5QrcodeScanner = new Html5QrcodeScanner("reader", config, /* verbose= */ false);
             html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-        }
-
-        function closeScanner() {
-            document.getElementById('scanner-container').style.display = 'none';
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.clear();
-            }
         }
 
         function submitData() {
@@ -254,11 +230,14 @@
                 }
                 localStorage.setItem('scannedData', JSON.stringify(data));
                 displayData();
-                document.getElementById("input-section").style.display = "none";
-                document.getElementById('scanner-container').style.display = 'block';
+                closeModal();
             } else {
                 alert('Bitte scannen Sie einen Code und geben Sie eine Stückzahl ein.');
             }
+        }
+
+        function closeModal() {
+            document.getElementById("input-modal").style.display = "none";
         }
 
         function displayData() {
@@ -268,14 +247,13 @@
                 display.innerHTML = '<p>Keine gespeicherten Daten.</p>';
                 return;
             }
-
             let tableHtml = '<table><tr><th>Code</th><th>Stückzahl</th><th>Aktion</th></tr>';
             data.forEach((row, index) => {
                 tableHtml += `<tr><td>${row.code}</td><td>${row.quantity}</td>
-                    <td class="action-buttons">
-                        <button class="icon-button" onclick="editItem(${index})">✏️</button>
-                        <button class="icon-button" onclick="confirmDeleteItem(${index})">🗑️</button>
-                    </td></tr>`;
+                <td class="action-buttons">
+                <button class="icon-button" onclick="editItem(${index})">✏️</button>
+                <button class="icon-button" onclick="confirmDeleteItem(${index})">🗑️</button>
+                </td></tr>`;
             });
             tableHtml += '</table>';
             display.innerHTML = tableHtml;
@@ -288,8 +266,9 @@
             const data = JSON.parse(localStorage.getItem('scannedData') || '[]');
             const item = data[index];
             scannedCode = item.code;
+            document.getElementById('scanned-code').textContent = scannedCode;
             document.getElementById('quantity').value = item.quantity;
-            document.getElementById('input-section').style.display = 'block';
+            document.getElementById('input-modal').style.display = 'block';
             document.getElementById('quantity').focus();
             document.getElementById('quantity').select();
             isEditing = true;
@@ -318,12 +297,10 @@
                 alert('Keine Daten zum Exportieren');
                 return;
             }
-
             let csvContent = "data:text/csv;charset=utf-8,code,quantity\n";
             data.forEach(row => {
                 csvContent += `${row.code},${row.quantity}\n`;
             });
-
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
@@ -331,7 +308,6 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-
             saveList(data);
         }
 
@@ -347,14 +323,11 @@
 
         function goBack() {
             document.getElementById('menu').style.display = 'block';
-            document.getElementById('scanner-container').style.display = 'none';
-            document.getElementById('input-section').style.display = 'none';
+            document.getElementById('reader').style.display = 'none';
+            document.getElementById('input-modal').style.display = 'none';
             document.getElementById('list-section').style.display = 'none';
             document.getElementById('back-button').style.display = 'none';
             displayData();
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.clear();
-            }
         }
 
         window.onload = () => {
