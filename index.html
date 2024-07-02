@@ -18,7 +18,7 @@
             max-width: 600px;
             margin: auto;
         }
-        #input-section, #menu, #list-section, #back-button {
+        #menu, #list-section, #back-button {
             margin-top: 20px;
             text-align: center;
         }
@@ -85,6 +85,25 @@
             font-size: 16px;
             inputmode: numeric;
         }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 400px;
+        }
     </style>
 </head>
 <body>
@@ -96,10 +115,14 @@
         <button class="button" onclick="goBack()">Zurück</button>
     </div>
     <div id="reader" style="display: none;"></div>
-    <div id="input-section" style="display: none;">
-        <label for="quantity">Stückzahl eingeben:</label>
-        <input type="number" id="quantity" name="quantity" autofocus inputmode="numeric">
-        <button class="button" onclick="submitData()">Bestätigen</button>
+    <div id="input-modal" class="modal">
+        <div class="modal-content">
+            <h2>Stückzahl eingeben</h2>
+            <p>Gescannter Code: <span id="scanned-code"></span></p>
+            <input type="number" id="quantity" name="quantity" inputmode="numeric">
+            <button class="button" onclick="submitData()">Bestätigen</button>
+            <button class="button" onclick="closeModal()">Abbrechen</button>
+        </div>
     </div>
     <div id="list-section" style="display: none;"></div>
     <div id="data-display"></div>
@@ -109,6 +132,7 @@
         <button class="button" onclick="confirmDelete(true)">Ja</button>
         <button class="button" onclick="confirmDelete(false)">Nein</button>
     </div>
+
     <script>
         let scannedCode = '';
         let isEditing = false;
@@ -140,10 +164,10 @@
             let listHtml = '<table><tr><th>Liste</th><th>Aktion</th></tr>';
             existingData.forEach((list, index) => {
                 listHtml += `<tr><td>${list.name}</td>
-                    <td class="action-buttons">
-                        <button class="button" onclick="continueList(${index})">Weiter bearbeiten</button>
-                        <button class="button" onclick="deleteList(${index})">Liste löschen</button>
-                    </td></tr>`;
+                <td class="action-buttons">
+                <button class="button" onclick="continueList(${index})">Weiter bearbeiten</button>
+                <button class="button" onclick="deleteList(${index})">Liste löschen</button>
+                </td></tr>`;
             });
             listHtml += '</table>';
             listSection.innerHTML = listHtml;
@@ -172,7 +196,9 @@
         function onScanSuccess(decodedText, decodedResult) {
             console.log(`Code gescannt = ${decodedText}`, decodedResult);
             scannedCode = extractInfo(decodedText);
-            document.getElementById("input-section").style.display = "block";
+            document.getElementById("scanned-code").textContent = scannedCode;
+            document.getElementById("input-modal").style.display = "block";
+            document.getElementById('quantity').value = '';
             document.getElementById('quantity').focus();
         }
 
@@ -204,10 +230,15 @@
                 }
                 localStorage.setItem('scannedData', JSON.stringify(data));
                 displayData();
-                document.getElementById("input-section").style.display = "none";
+                closeModal();
+                alert('Daten erfolgreich gespeichert!');
             } else {
                 alert('Bitte scannen Sie einen Code und geben Sie eine Stückzahl ein.');
             }
+        }
+
+        function closeModal() {
+            document.getElementById("input-modal").style.display = "none";
         }
 
         function displayData() {
@@ -221,8 +252,8 @@
             data.forEach((row, index) => {
                 tableHtml += `<tr><td>${row.code}</td><td>${row.quantity}</td>
                 <td class="action-buttons">
-                    <button class="icon-button" onclick="editItem(${index})">✏️</button>
-                    <button class="icon-button" onclick="confirmDeleteItem(${index})">🗑️</button>
+                <button class="icon-button" onclick="editItem(${index})">✏️</button>
+                <button class="icon-button" onclick="confirmDeleteItem(${index})">🗑️</button>
                 </td></tr>`;
             });
             tableHtml += '</table>';
@@ -236,8 +267,9 @@
             const data = JSON.parse(localStorage.getItem('scannedData') || '[]');
             const item = data[index];
             scannedCode = item.code;
+            document.getElementById('scanned-code').textContent = scannedCode;
             document.getElementById('quantity').value = item.quantity;
-            document.getElementById('input-section').style.display = 'block';
+            document.getElementById('input-modal').style.display = 'block';
             document.getElementById('quantity').focus();
             document.getElementById('quantity').select();
             isEditing = true;
@@ -258,13 +290,6 @@
             }
             document.getElementById('popup').style.display = 'none';
             deleteIndex = -1;
-        }
-
-        function deleteItem(index) {
-            let data = JSON.parse(localStorage.getItem('scannedData') || '[]');
-            data.splice(index, 1);
-            localStorage.setItem('scannedData', JSON.stringify(data));
-            displayData();
         }
 
         function exportData() {
@@ -300,7 +325,7 @@
         function goBack() {
             document.getElementById('menu').style.display = 'block';
             document.getElementById('reader').style.display = 'none';
-            document.getElementById('input-section').style.display = 'none';
+            document.getElementById('input-modal').style.display = 'none';
             document.getElementById('list-section').style.display = 'none';
             document.getElementById('back-button').style.display = 'none';
             displayData();
