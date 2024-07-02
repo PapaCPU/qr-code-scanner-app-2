@@ -14,9 +14,9 @@
             padding: 0;
         }
         #reader {
-            width: 100%;
-            max-width: 600px;
-            margin: auto;
+            width: 300px;
+            height: 300px;
+            margin: 20px auto;
         }
         #menu, #list-section, #back-button {
             margin-top: 20px;
@@ -26,16 +26,16 @@
             background-color: #f0f8ff;
             border: none;
             color: black;
-            padding: 20px 40px;
+            padding: 15px 30px;
             text-align: center;
             text-decoration: none;
             display: block;
-            font-size: 24px;
-            margin: 20px auto;
+            font-size: 18px;
+            margin: 10px auto;
             cursor: pointer;
             border-radius: 12px;
             width: 80%;
-            max-width: 400px;
+            max-width: 300px;
         }
         #data-display {
             margin-top: 20px;
@@ -66,15 +66,6 @@
             display: flex;
             justify-content: space-around;
         }
-        @media (max-width: 600px) {
-            .button {
-                font-size: 18px;
-                padding: 15px 30px;
-            }
-            #data-display {
-                max-height: 200px;
-            }
-        }
         .icon-button {
             background: none;
             border: none;
@@ -83,7 +74,9 @@
         }
         input[type=number] {
             font-size: 16px;
-            inputmode: numeric;
+            width: 100%;
+            padding: 5px;
+            margin: 5px 0;
         }
         .modal {
             display: none;
@@ -102,7 +95,7 @@
             padding: 20px;
             border: 1px solid #888;
             width: 80%;
-            max-width: 400px;
+            max-width: 300px;
         }
     </style>
 </head>
@@ -138,6 +131,7 @@
         let isEditing = false;
         let editingIndex = -1;
         let deleteIndex = -1;
+        let html5QrcodeScanner;
 
         function startNewList() {
             localStorage.removeItem('scannedData');
@@ -212,8 +206,8 @@
         }
 
         function initScanner() {
-            const config = { fps: 10, qrbox: 250 };
-            const html5QrcodeScanner = new Html5QrcodeScanner("reader", config, /* verbose= */ false);
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+            html5QrcodeScanner = new Html5QrcodeScanner("reader", config, /* verbose= */ false);
             html5QrcodeScanner.render(onScanSuccess, onScanFailure);
         }
 
@@ -231,7 +225,6 @@
                 localStorage.setItem('scannedData', JSON.stringify(data));
                 displayData();
                 closeModal();
-                alert('Daten erfolgreich gespeichert!');
             } else {
                 alert('Bitte scannen Sie einen Code und geben Sie eine Stückzahl ein.');
             }
@@ -323,6 +316,9 @@
         }
 
         function goBack() {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.clear();
+            }
             document.getElementById('menu').style.display = 'block';
             document.getElementById('reader').style.display = 'none';
             document.getElementById('input-modal').style.display = 'none';
