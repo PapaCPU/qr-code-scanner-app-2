@@ -4,27 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>QR Code Scanner</title>
-    <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+    <script src="js/html5-qrcode.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #d3d3d3;
+            text-align: center;
             margin: 0;
             padding: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-        #top-section {
-            flex-shrink: 0;
         }
         #reader {
-            width: 300px;
-            height: 300px;
-            margin: 20px auto;
-            display: none;
+            width: 100%;
+            max-width: 600px;
+            margin: auto;
         }
-        #menu, #list-section, #back-button {
+        #input-section, #menu, #list-section, #back-button {
             margin-top: 20px;
             text-align: center;
         }
@@ -32,25 +26,23 @@
             background-color: #f0f8ff;
             border: none;
             color: black;
-            padding: 15px 30px;
+            padding: 20px 40px;
             text-align: center;
             text-decoration: none;
             display: block;
-            font-size: 18px;
-            margin: 10px auto;
+            font-size: 24px;
+            margin: 20px auto;
             cursor: pointer;
             border-radius: 12px;
             width: 80%;
-            max-width: 300px;
-        }
-        #scrollable-section {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 20px;
+            max-width: 400px;
         }
         #data-display {
+            margin-top: 20px;
             max-width: 600px;
             margin: auto;
+            overflow-y: auto;
+            max-height: 300px;
         }
         table {
             width: 100%;
@@ -74,6 +66,15 @@
             display: flex;
             justify-content: space-around;
         }
+        @media (max-width: 600px) {
+            .button {
+                font-size: 18px;
+                padding: 15px 30px;
+            }
+            #data-display {
+                max-height: 200px;
+            }
+        }
         .icon-button {
             background: none;
             border: none;
@@ -82,59 +83,64 @@
         }
         input[type=number] {
             font-size: 16px;
-            width: 100%;
-            padding: 5px;
-            margin: 5px 0;
+            inputmode: numeric;
         }
-        .modal {
+        #scanner-container {
             display: none;
             position: fixed;
-            z-index: 1;
-            left: 0;
             top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.4);
+            background-color: rgba(0,0,0,0.8);
+            z-index: 1000;
         }
-        .modal-content {
-            background-color: #fefefe;
-            margin: 15% auto;
+        #scanner-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
             padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-width: 300px;
+            border-radius: 10px;
+        }
+        #close-scanner {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <div id="top-section">
-        <div id="menu">
-            <button class="button" onclick="startNewList()">Neue Liste</button>
-            <button class="button" onclick="showList()">Bearbeiten</button>
-        </div>
-        <div id="back-button">
-            <button class="button" onclick="goBack()">Zurück</button>
-        </div>
-    </div>
-    
-    <div id="scrollable-section">
-        <div id="list-section" style="display: none;"></div>
-        <div id="data-display"></div>
-        <button id="export-button" class="button" onclick="exportData()" style="display: none;">Daten exportieren</button>
+    <div id="menu">
+        <button class="button" onclick="startNewList()">Neue Liste</button>
+        <button class="button" onclick="showList()">Bearbeiten</button>
     </div>
 
-    <div id="reader"></div>
+    <div id="back-button">
+        <button class="button" onclick="goBack()">Zurück</button>
+    </div>
 
-    <div id="input-modal" class="modal">
-        <div class="modal-content">
-            <h2>Stückzahl eingeben</h2>
-            <p>Gescannter Code: <span id="scanned-code"></span></p>
-            <input type="number" id="quantity" name="quantity" inputmode="numeric">
-            <button class="button" onclick="submitData()">Bestätigen</button>
-            <button class="button" onclick="closeModal()">Abbrechen</button>
+    <div id="scanner-container">
+        <div id="scanner-content">
+            <div id="close-scanner" onclick="closeScanner()">&times;</div>
+            <div id="reader"></div>
         </div>
     </div>
+
+    <div id="input-section" style="display: none;">
+        <label for="quantity">Stückzahl eingeben:</label>
+        <input type="number" id="quantity" name="quantity" autofocus inputmode="numeric">
+        <button class="button" onclick="submitData()">Bestätigen</button>
+    </div>
+
+    <div id="list-section" style="display: none;"></div>
+
+    <div id="data-display"></div>
+
+    <button id="export-button" class="button" onclick="exportData()" style="display: none;">Daten exportieren</button>
 
     <div id="popup" style="display: none;">
         <p>Möchten Sie diesen Eintrag wirklich löschen?</p>
@@ -152,9 +158,8 @@
         function startNewList() {
             localStorage.removeItem('scannedData');
             document.getElementById('menu').style.display = 'none';
-            document.getElementById('reader').style.display = 'block';
+            document.getElementById('scanner-container').style.display = 'block';
             document.getElementById('back-button').style.display = 'block';
-            document.getElementById('scrollable-section').style.display = 'none';
             initScanner();
         }
 
@@ -168,17 +173,19 @@
         function displayList() {
             const listSection = document.getElementById('list-section');
             const existingData = JSON.parse(localStorage.getItem('scannedDataList') || '[]');
+
             if (existingData.length === 0) {
                 listSection.innerHTML = '<p>Keine gespeicherten Listen.</p>';
                 return;
             }
+
             let listHtml = '<table><tr><th>Liste</th><th>Aktion</th></tr>';
             existingData.forEach((list, index) => {
                 listHtml += `<tr><td>${list.name}</td>
-                <td class="action-buttons">
-                <button class="button" onclick="continueList(${index})">Weiter bearbeiten</button>
-                <button class="button" onclick="deleteList(${index})">Liste löschen</button>
-                </td></tr>`;
+                    <td class="action-buttons">
+                        <button class="button" onclick="continueList(${index})">Weiter bearbeiten</button>
+                        <button class="button" onclick="deleteList(${index})">Liste löschen</button>
+                    </td></tr>`;
             });
             listHtml += '</table>';
             listSection.innerHTML = listHtml;
@@ -189,9 +196,8 @@
             localStorage.setItem('scannedData', JSON.stringify(existingData[index].data));
             document.getElementById('menu').style.display = 'none';
             document.getElementById('list-section').style.display = 'none';
-            document.getElementById('reader').style.display = 'block';
+            document.getElementById('scanner-container').style.display = 'block';
             document.getElementById('back-button').style.display = 'block';
-            document.getElementById('scrollable-section').style.display = 'none';
             initScanner();
             displayData();
         }
@@ -208,10 +214,9 @@
         function onScanSuccess(decodedText, decodedResult) {
             console.log(`Code gescannt = ${decodedText}`, decodedResult);
             scannedCode = extractInfo(decodedText);
-            document.getElementById("scanned-code").textContent = scannedCode;
-            document.getElementById("input-modal").style.display = "block";
-            document.getElementById('quantity').value = '';
+            document.getElementById("input-section").style.display = "block";
             document.getElementById('quantity').focus();
+            closeScanner();
         }
 
         function extractInfo(decodedText) {
@@ -224,9 +229,16 @@
         }
 
         function initScanner() {
-            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+            const config = { fps: 10, qrbox: 250 };
             html5QrcodeScanner = new Html5QrcodeScanner("reader", config, /* verbose= */ false);
             html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+        }
+
+        function closeScanner() {
+            document.getElementById('scanner-container').style.display = 'none';
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.clear();
+            }
         }
 
         function submitData() {
@@ -242,14 +254,11 @@
                 }
                 localStorage.setItem('scannedData', JSON.stringify(data));
                 displayData();
-                closeModal();
+                document.getElementById("input-section").style.display = "none";
+                document.getElementById('scanner-container').style.display = 'block';
             } else {
                 alert('Bitte scannen Sie einen Code und geben Sie eine Stückzahl ein.');
             }
-        }
-
-        function closeModal() {
-            document.getElementById("input-modal").style.display = "none";
         }
 
         function displayData() {
@@ -259,13 +268,14 @@
                 display.innerHTML = '<p>Keine gespeicherten Daten.</p>';
                 return;
             }
+
             let tableHtml = '<table><tr><th>Code</th><th>Stückzahl</th><th>Aktion</th></tr>';
             data.forEach((row, index) => {
                 tableHtml += `<tr><td>${row.code}</td><td>${row.quantity}</td>
-                <td class="action-buttons">
-                <button class="icon-button" onclick="editItem(${index})">✏️</button>
-                <button class="icon-button" onclick="confirmDeleteItem(${index})">🗑️</button>
-                </td></tr>`;
+                    <td class="action-buttons">
+                        <button class="icon-button" onclick="editItem(${index})">✏️</button>
+                        <button class="icon-button" onclick="confirmDeleteItem(${index})">🗑️</button>
+                    </td></tr>`;
             });
             tableHtml += '</table>';
             display.innerHTML = tableHtml;
@@ -278,9 +288,8 @@
             const data = JSON.parse(localStorage.getItem('scannedData') || '[]');
             const item = data[index];
             scannedCode = item.code;
-            document.getElementById('scanned-code').textContent = scannedCode;
             document.getElementById('quantity').value = item.quantity;
-            document.getElementById('input-modal').style.display = 'block';
+            document.getElementById('input-section').style.display = 'block';
             document.getElementById('quantity').focus();
             document.getElementById('quantity').select();
             isEditing = true;
@@ -309,10 +318,12 @@
                 alert('Keine Daten zum Exportieren');
                 return;
             }
+
             let csvContent = "data:text/csv;charset=utf-8,code,quantity\n";
             data.forEach(row => {
                 csvContent += `${row.code},${row.quantity}\n`;
             });
+
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
@@ -320,6 +331,7 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+
             saveList(data);
         }
 
@@ -334,22 +346,19 @@
         }
 
         function goBack() {
+            document.getElementById('menu').style.display = 'block';
+            document.getElementById('scanner-container').style.display = 'none';
+            document.getElementById('input-section').style.display = 'none';
+            document.getElementById('list-section').style.display = 'none';
+            document.getElementById('back-button').style.display = 'none';
+            displayData();
             if (html5QrcodeScanner) {
                 html5QrcodeScanner.clear();
             }
-            document.getElementById('menu').style.display = 'block';
-            document.getElementById('reader').style.display = 'none';
-            document.getElementById('input-modal').style.display = 'none';
-            document.getElementById('list-section').style.display = 'none';
-            document.getElementById('back-button').style.display = 'none';
-            document.getElementById('scrollable-section').style.display = 'block';
-            displayData();
         }
 
         window.onload = () => {
             document.getElementById('menu').style.display = 'block';
-            document.getElementById('scrollable-section').style.display = 'block';
-            displayData();
         };
     </script>
 </body>
